@@ -56,21 +56,21 @@ def sha256(b):
     return list(map(int, s))
 
 
-def mesh(w, h):
+def mesh(w, h, t=1):
     ww = np.arange(start=1, stop=w + 1, step=1) / w
     hh = np.arange(start=1, stop=h + 1, step=1) / h
     x, y = np.meshgrid(ww, hh)
     coord = np.concatenate(
         (y.flatten()[:, np.newaxis], x.flatten()[:, np.newaxis]), axis=1)
-    coord = np.concatenate((coord, np.ones((coord.shape[0], 1))), axis=1)
+    coord = np.concatenate((coord, np.ones((coord.shape[0], 1)) * t), axis=1)
     return coord
 
 
-def type1(rng, width, height):
+def type1(rng, width, height, t=1):
     LAYERS = [42, 42, 42, 42, 42, 3]
     NONLINEAR = ["sigmoid", "log", "sin", "xlog", "sin", "identity"]
 
-    x = mesh(width, height).astype('float64')
+    x = mesh(width, height, t=t).astype('float64')
     batch_size = x.shape[0]
 
     before = LAYERS[0]
@@ -89,11 +89,11 @@ def type1(rng, width, height):
     return x
 
 
-def type2(rng, width, height):
+def type2(rng, width, height, t=1):
     LAYERS = [30, 30, 30, 30, 3]
     NONLINEAR = ["sigmoid", "sin", "log", "identity", "identity"]
 
-    x = mesh(width, height).astype('float64')
+    x = mesh(width, height, t=t).astype('float64')
     batch_size = x.shape[0]
     before = 3
 
@@ -107,11 +107,11 @@ def type2(rng, width, height):
     return x
 
 
-def type3(rng, width, height):
+def type3(rng, width, height, t=1):
     LAYERS = [30, 30, 30, 30, 3]
     NONLINEAR = ["sigmoid", "sin", "xlog", "sin", "abs_tanh"]
 
-    x = mesh(width, height).astype('float64')
+    x = mesh(width, height, t=t).astype('float64')
     batch_size = x.shape[0]
     before = 3
 
@@ -125,11 +125,11 @@ def type3(rng, width, height):
     return x
 
 
-def type3a(rng, width, height):
+def type3a(rng, width, height, t=1):
     LAYERS = [30, 30, 30, 30, 3]
     NONLINEAR = ["sigmoid", "sin", "xlog", "sin", "tanh"]
 
-    x = mesh(width, height).astype('float64')
+    x = mesh(width, height, t=t).astype('float64')
     batch_size = x.shape[0]
     before = 3
 
@@ -143,11 +143,11 @@ def type3a(rng, width, height):
     return x
 
 
-def type4(rng, width, height):
+def type4(rng, width, height, t=1):
     LAYERS = [30, 30, 30, 30, 30, 3]
     NONLINEAR = ["sigmoid", "sin", "log_x2_p1", "tanh", "softsign", "identity"]
 
-    x = mesh(width, height).astype('float64')
+    x = mesh(width, height, t=t).astype('float64')
     batch_size = x.shape[0]
     before = 3
 
@@ -185,7 +185,12 @@ FUNCTIONS = {
               help="Output image path",
               type=str,
               default="output.png")
-def main(input, file, width, height, randomtype, output):
+@click.option("-m",
+              "--timedim",
+              help="Value of time dimension",
+              type=float,
+              default=1.0)
+def main(input, file, width, height, randomtype, output, timedim):
     if input is None and file is None:
         print("Input string or file must be indicated")
         sys.exit(2)
@@ -199,7 +204,7 @@ def main(input, file, width, height, randomtype, output):
 
     rng = np.random.Generator(np.random.MT19937(sha256(b)))
 
-    x = FUNCTIONS[randomtype](rng, width, height)
+    x = FUNCTIONS[randomtype](rng, width, height, t=timedim)
 
     pixels = ((x - np.min(x)) / (np.max(x) - np.min(x) + 1e-08) *
               255).astype('uint8')
